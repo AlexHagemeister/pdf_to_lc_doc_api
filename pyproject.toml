@@ -21,6 +21,7 @@ pillow = "^11.1.0"
 jupyter = "^1.1.1"
 openai = "^1.64.0"
 python-dotenv = "^1.0.1"
+ipython = "^8.32.0"
 
 
 [tool.poetry.group.dev.dependencies]
