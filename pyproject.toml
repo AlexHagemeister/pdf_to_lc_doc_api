@@ -12,6 +12,15 @@ langchain = "^0.3.19"
 pypdf = "^5.3.0"
 unstructured = "^0.16.23"
 pydantic = "^2.10.6"
+pymupdf = "^1.25.3"
+pdfplumber = "^0.11.5"
+markdownify = "^1.0.0"
+python-frontmatter = "^1.1.0"
+pytesseract = "^0.3.13"
+pillow = "^11.1.0"
+jupyter = "^1.1.1"
+openai = "^1.64.0"
+python-dotenv = "^1.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -24,3 +33,10 @@ mypy = "^1.15.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:.*swigvarlink.*:",
+    "ignore::DeprecationWarning:.*SwigPyPacked.*:",
+    "ignore::DeprecationWarning:.*SwigPyObject.*:"
+]

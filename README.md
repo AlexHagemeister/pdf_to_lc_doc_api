@@ -1,16 +1,32 @@
-# PDF to LangChain Document API
+# PDF to LangChain Document Converter
 
-A Python API for converting PDF documents to LangChain document format.
+A Python library that converts PDF documents to LangChain Document format with enhanced markdown conversion and semantic analysis using OpenAI's GPT-4o-mini model.
+
+## Features
+
+- **Vision-Enhanced PDF Processing**: Uses GPT-4o-mini's vision capabilities to accurately process PDF content, including complex layouts and mathematical formulas
+- **Markdown Conversion**: Converts PDF content to clean, well-formatted markdown
+- **Semantic Analysis**: Generates summaries and extracts key technical concepts from each page
+- **Document Metadata**: Includes document summaries, keywords, and unique identifiers
+- **LangChain Integration**: Outputs standard LangChain Document objects for seamless integration
+
+## Model Information
+
+This library uses the `gpt-4o-mini` model, which provides:
+
+- Vision capabilities for processing PDF layouts
+- Structured JSON output for consistent parsing
+- High accuracy in technical content conversion
+- Efficient processing of mathematical notation and special characters
 
 ## Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/pdf_to_lc_doc_api.git
-cd pdf_to_lc_doc_api
+# Using Poetry (recommended)
+poetry add pdf-to-lc-doc-api
 
-# Install dependencies using Poetry
-poetry install
+# Using pip
+pip install pdf-to-lc-doc-api
 ```
 
 ## Usage
@@ -18,19 +34,54 @@ poetry install
 ```python
 from pdf_to_lc_doc_api import PDFConverter
 
-# Initialize the converter
-converter = PDFConverter()
+# Convert a PDF to a LangChain Document
+document = PDFConverter.convert("path/to/your.pdf")
 
-# Convert a PDF file to LangChain document
-documents = converter.convert("path/to/your/document.pdf")
+# Access the converted content
+print(document.page_content)  # Markdown-formatted content
+print(document.metadata)      # Includes summary, keywords, etc.
+
+# Add custom metadata
+document = PDFConverter.convert("path/to/your.pdf", metadata={
+    "source": "research_papers",
+    "category": "technical"
+})
 ```
+
+## Methodology
+
+1. **Page Processing**:
+
+   - Each page is converted to a high-quality image
+   - GPT-4o-mini processes the image to extract and format content
+   - Generates markdown text, page summary, and key technical terms
+
+2. **Document Analysis**:
+
+   - Aggregates page-level content and summaries
+   - Generates comprehensive document summary
+   - Curates most relevant technical keywords
+
+3. **Output Format**:
+   - Clean, standardized markdown
+   - Preserved mathematical notation
+   - Structured metadata
+   - LangChain-compatible document object
+
+## Requirements
+
+- Python 3.8+
+- OpenAI API key with access to GPT-4o-mini
+- PyMuPDF (for PDF processing)
+- Poetry (for dependency management)
 
 ## Development
 
-This project uses Poetry for dependency management. To set up the development environment:
-
 ```bash
-# Install development dependencies
+# Clone the repository
+git clone https://github.com/yourusername/pdf-to-lc-doc-api.git
+
+# Install dependencies
 poetry install
 
 # Run tests
@@ -39,4 +90,4 @@ poetry run pytest
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - See LICENSE file for details
