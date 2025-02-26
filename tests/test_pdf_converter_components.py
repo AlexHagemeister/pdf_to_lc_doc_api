@@ -7,11 +7,34 @@ import pytest
 import fitz
 from pathlib import Path
 from openai import OpenAI
-from pdf_to_lc_doc_api.converter import PDFConverter, PageAnalysis, DocumentSummary
+from pdf_to_lc_doc_api.converter import PDFConverter
+import functools
+import signal
 
 # test data setup
 TEST_DATA_DIR = Path(__file__).parent / "data"
 TEST_PDF = TEST_DATA_DIR / "test.pdf"
+
+
+# timeout decorator for tests
+def timeout(seconds):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            def handler(signum, frame):
+                raise TimeoutError(f"Test timed out after {seconds} seconds")
+
+            signal.signal(signal.SIGALRM, handler)
+            signal.alarm(seconds)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+
+        return wrapper
+
+    return decorator
 
 
 @pytest.fixture
@@ -37,7 +60,7 @@ def openai_client():
 
 
 def test_get_document_metadata(test_pdf_path):
-    """test metadata extraction - simplest method"""
+    """test metadata extraction"""
     metadata = PDFConverter._get_document_metadata(test_pdf_path)
 
     assert isinstance(metadata, dict)
@@ -52,18 +75,8 @@ def test_calculate_file_hash(test_pdf_path):
     hash_value = PDFConverter._calculate_file_hash(test_pdf_path)
 
     assert isinstance(hash_value, str)
-    assert len(hash_value) == 64  # sha256 hash length
-    # test idempotency
+    assert len(hash_value) == 64
     assert hash_value == PDFConverter._calculate_file_hash(test_pdf_path)
-
-
-def test_extract_page_text(test_pdf_page):
-    """test raw text extraction from page"""
-    text = PDFConverter._extract_page_text(test_pdf_page)
-
-    assert isinstance(text, str)
-    # basic content check
-    assert len(text.strip()) > 0
 
 
 def test_encode_page_image(test_pdf_page):
@@ -71,7 +84,6 @@ def test_encode_page_image(test_pdf_page):
     base64_image = PDFConverter._encode_page_image(test_pdf_page)
 
     assert isinstance(base64_image, str)
-    # check if valid base64
     try:
         import base64
 
@@ -80,18 +92,13 @@ def test_encode_page_image(test_pdf_page):
         pytest.fail(f"Invalid base64 encoding: {str(e)}")
 
 
-def test_process_page_structure(test_pdf_page, openai_client):
-    """test structure of _process_page output"""
+@timeout(30)
+def test_process_page(test_pdf_page, openai_client):
+    """test _process_page output with 30 second timeout"""
     result = PDFConverter._process_page(test_pdf_page, openai_client)
 
-    assert isinstance(result, PageAnalysis)
-    assert hasattr(result, "markdown_text")
-    assert hasattr(result, "summary")
-    assert hasattr(result, "keywords")
-    assert isinstance(result.markdown_text, str)
-    assert isinstance(result.summary, str)
-    assert isinstance(result.keywords, list)
-    assert len(result.keywords) <= 3
+    assert isinstance(result, str)
+    assert len(result.strip()) > 0
 
 
 def test_process_page_error_handling():
@@ -99,50 +106,15 @@ def test_process_page_error_handling():
     client = OpenAI()
     result = PDFConverter._process_page(None, client)
 
-    assert isinstance(result, PageAnalysis)
-    assert result.markdown_text == ""
-    assert "Error processing page" in result.summary
-    assert result.keywords == []
-
-
-def test_generate_final_summary_structure(openai_client):
-    """test structure of _generate_final_summary output"""
-    try:
-        # minimal test data
-        test_summaries = "Page 1: This is a test page."
-        test_keywords = {"test"}  # single keyword to minimize complexity
-
-        print("Starting summary generation...")  # debug logging
-        result = PDFConverter._generate_final_summary(
-            test_summaries, test_keywords, openai_client
-        )
-        print(f"Received result type: {type(result)}")  # debug logging
-
-        # basic type check
-        assert isinstance(
-            result, DocumentSummary
-        ), "Result should be DocumentSummary instance"
-
-        # verify required attributes exist
-        assert hasattr(result, "summary"), "Missing 'summary' attribute"
-        assert hasattr(result, "keywords"), "Missing 'keywords' attribute"
-
-        # verify attribute types
-        assert isinstance(result.summary, str), "Summary should be string"
-        assert isinstance(result.keywords, list), "Keywords should be list"
-
-    except Exception as e:
-        pytest.fail(f"Test failed with error: {str(e)}")
-        raise  # re-raise to see full traceback
+    assert isinstance(result, str)
+    assert result == ""
 
 
 def test_extract_text_structure(test_pdf_path):
     """test structure of _extract_text output"""
-    content, summary, keywords = PDFConverter._extract_text(test_pdf_path)
+    content = PDFConverter._extract_text(test_pdf_path)
 
     assert isinstance(content, str)
-    assert isinstance(summary, str)
-    assert isinstance(keywords, list)
     assert len(content) > 0
 
 
@@ -159,8 +131,6 @@ def test_convert_basic(test_pdf_path):
     assert isinstance(doc.metadata, dict)
     assert "title" in doc.metadata
     assert "document_id" in doc.metadata
-    assert "document_summary" in doc.metadata
-    assert "keywords" in doc.metadata
 
 
 def test_convert_with_metadata(test_pdf_path):
