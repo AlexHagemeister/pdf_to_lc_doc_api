@@ -2,7 +2,7 @@
 System prompts for the PDF converter
 """
 
-PAGE_PROMPT = """You are a specialized PDF to Markdown converter, specializing in converting technical and mathematical content. 
+PAGE_PROMPT = r"""You are a specialized PDF to Markdown converter, specializing in converting technical and mathematical content. 
 Convert the page content to a clean and well-structured Markdown format. 
 
 - **Mathematical Notation**:
